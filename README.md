@@ -15,3 +15,9 @@ SPA and PWA based CMS
  
 # Built with it
 https://billah.azurewebsites.net
+
+# Contributors
+ <strong>Muayyat Billah</strong>
+ Github: https://github.com/muayyat <br/>
+ Twitter: https://twitter.com/muayyaty <br/>
+ Website: https://billah.azurewebsites.net <br/>
