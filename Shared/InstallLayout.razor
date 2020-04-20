@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject ApplicationDbContext _context
+@inject IJSRuntime JSRuntime
+@inject NavigationManager nav
+<!-- Animate CSS
+================================================== -->
+<link rel="stylesheet" href="css/Theme/animate.min.css">
+
+<link rel="stylesheet" href="profile/css/icomoon.css">
+<!-- Bootstrap  -->
+<link rel="stylesheet" href="profile/css/bootstrap.css">
+<!-- Theme style  -->
+<link rel="stylesheet" href="profile/css/style.css">
+
+<BlazoredToasts />
+
+@Body
+
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        if ( _context.Users.Any())
+        {
+            nav.NavigateTo(nav.BaseUri);
+        }
+        
+    }
+
+    protected override async Task
+         OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+        }
+    }
+
+
+
+
+    void IDisposable.Dispose()
+    {
+    }
+}

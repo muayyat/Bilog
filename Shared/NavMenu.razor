@@ -1,0 +1,87 @@
+﻿@using Bilog.Data;
+@using Bilog.Data.Models;
+@inherits OwningComponentBase<GeneralSettingsService>
+<!-- Bootstrap CSS
+   ================================================== -->
+<link rel="stylesheet" href="css/Theme/bootstrap.min.css">
+
+<!-- Animate CSS
+================================================== -->
+<link rel="stylesheet" href="css/Theme/animate.min.css">
+
+<!-- Font Icons CSS
+================================================== -->
+<link rel="stylesheet" href="css/Theme/font-awesome.min.css">
+<link rel="stylesheet" href="css/Theme/ionicons.min.css">
+
+<!-- Main CSS
+================================================== -->
+<link rel="stylesheet" href="css/Theme/style.css">
+
+<!-- Google web font
+================================================== -->
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,300' rel='stylesheet' type='text/css'>
+
+<!-- Navigation section
+================================================== -->
+<div class="nav-container">
+    <nav class="nav-inner transparent">
+
+        <div class="navbar">
+            <div class="container">
+                <div class="row">
+
+                    <div class="brand">
+                        <a href="/">@objGeneralSettings.ApplicationName</a>
+                    </div>
+
+                    <div class="navicon" style="flex:2;">
+                        <div class="menu-container">
+
+                            <div class="circle dark inline" onclick="funcx()">
+                                <i class="icon ion-navicon"></i>
+                            </div>
+
+                            <div class="list-menu"  id="listy">
+
+                                <i class="icon ion-close-round close-iframe" onclick="funcy()"></i>
+                                <div class="intro-inner">
+                                    <ul id="nav-menu">
+                                        <li><a href="/" onclick="funcy()">Home</a></li>
+                                        <li><a href="profile" onclick="funcy()">Profile</a></li>
+                                        <li><a href="blogs" onclick="funcy()">Blog</a></li>
+                                        <li><a href="projects" onclick="funcy()">Projects</a></li>
+                                        <li><a href="contact" onclick="funcy()">Contact Me</a></li>
+                                        <li><a href="invite" onclick="funcy()">Invite Me</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </nav>
+</div>
+
+@code {
+    GeneralSettings objGeneralSettings;
+    bool collapseNavMenu = true;
+    bool AllowRegistration = false;
+
+    string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        objGeneralSettings = await @Service.GetGeneralSettingsAsync();
+            
+     }
+
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
