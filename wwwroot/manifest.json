@@ -1,0 +1,20 @@
+{
+  "short_name": "Billlah",
+  "name": "Muayyat Billah",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color":  "#ff4500",
+  "theme_color":  "#ff4500",
+  "icons": [
+    {
+      "src":"/default-icon-192x192.png",
+      "type":"image/png",
+      "sizes":"192x192"
+    },
+    {
+      "src":"/default-icon-512x512.png",
+      "type":"image/png",
+      "sizes":"512x512"
+    }
+  ]
+}
