@@ -1,0 +1,74 @@
+﻿@page "/"
+@namespace Bilog.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bilog</title>
+    <base href="~/" />
+    <link href="quillsnow.css" rel="stylesheet">
+    <link href="quillbuble.css" rel="stylesheet">
+    <!---link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" /-->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/default.css">
+    <link href="_content/Blazored.Toast/blazored-toast.css" rel="stylesheet" />
+    <link href="css/site.css" rel="stylesheet" />
+    <script src="/ServiceWorkerRegister.js"></script>
+    <link href="/manifest.json" rel="manifest" />
+    <!---->
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <hsts style="display:none;">
+        <div id="blazor-error-ui">
+            <environment include="Staging,Production">
+                An error has occurred. This application may no longer respond until reloaded.
+            </environment>
+            <environment include="Development">
+                An unhandled exception has occurred. See browser dev tools for details.
+            </environment>
+            <a href="" class="reload">Reload</a>
+            <a class="dismiss">🗙</a>
+        </div>
+        <div id="components-reconnect-modal">
+
+        </div>
+    </hsts>
+    <script src="_framework/blazor.server.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="quill.js"></script>
+    <script src="_content/Blazored.TextEditor/quill-blot-formatter.min.js"></script>
+    <script src="_content/Blazored.TextEditor/Blazored-BlazorQuill.js"></script>
+
+
+    <!-- Javascript
+    ================================================== -->
+    <!--script src="css/Theme/jquery.js"></!--script>
+    <script src="css/Theme/bootstrap.min.js"></script-->
+    <!-- jQuery Easing -->
+    <!--   Core JS Files   -->
+    <script src="Dashboard/js/core/jquery.min.js"></script>
+    <script src="Dashboard/js/core/bootstrap.min.js" async></script>
+    <script src="css/Theme/wow.min.js"></script>
+    <script src="css/Theme/isotope.js"></script>
+    <script src="css/Theme/imagesloaded.min.js"></script>
+    <script src="css/Theme/custom.js"></script>
+    <script src="Dashboard/js/core/popper.min.js"></script>
+    <script src="Dashboard/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+
+    <!-- Chart JS -->
+    <script src="Dashboard/js/plugins/chartjs.min.js" defer></script>
+    <!--  Notifications Plugin    -->
+    <script src="Dashboard/js/plugins/bootstrap-notify.js"></script>
+    <!-- Control Center for Now Ui Dashboard: parallax effects, scripts for the example pages etc -->
+    <script src="Dashboard/js/paper-dashboard.min.js?v=2.0.0" type="text/javascript"></script>
+    <!-- Paper Dashboard DEMO methods, don't include it in your project! -->
+    <script src="Dashboard/demo/demo.js"></script>
+</body>
+</html>

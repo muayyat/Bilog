@@ -1,0 +1,172 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SearchState SearchState
+@inject IConfiguration _configuration
+@inject IHttpContextAccessor httpContextAccessor
+@inject IHeadElementHelper HeadElementHelper
+@inherits OwningComponentBase<BlogsService>
+@inject NavigationManager nav
+<Title>Billah Blog</Title>
+<Meta Property="og:title" Content="Blazor-Blogs" />
+
+<!-- Header section
+================================================== -->
+<section id="header" class="header-one">
+    <div class="container">
+        <div class="row">
+
+            <div class="col-md-offset-3 col-md-6 col-sm-offset-2 col-sm-6">
+                <div class="header-thumb">
+                    <h1 class="wow fadeIn" data-wow-delay="1.6s">Muayyat Billah</h1>
+                    <h3 class="wow fadeInUp" data-wow-delay="1.9s">Web Developer | Entrepreneur</h3>
+                </div>
+            </div>
+
+        </div>
+    </div>
+<div class="row" style="justify-content:center;"><a class="btn btn-light" href="profile" style="background:white; margin:20px; font-size:20px;">My Profile <i class="fa fa-arrow-right"></i></a></div>
+</section>
+@if (colBlogs.Blogs.Count == 0)
+{
+
+    <!-- Preloader section
+    ================================================== -->
+    <div class="preloader">
+
+        <div class="sk-spinner sk-spinner-pulse"></div>
+
+    </div>
+}
+else
+{
+
+    <!-- Blog section
+    ================================================== -->
+<section id="blog">
+    <div class="container">
+        <div class="row card-group">
+            <style>
+                .hgtr {
+                    height: 300px !important;
+                    background-size: cover;
+                    background-position: center;
+                }
+            </style>
+            @foreach (var blog in colBlogs.Blogs)
+            {
+
+
+                <a href="blog/@blog.Link" style="min-height:350px; float:none; flex:auto; margin:10px;" class="wow fadeInUp col-sm-8 col-xs-10 col-md-4 col-lg-3 card card-user" data-wow-delay="1.9s">
+                    <div class="image hgtr" style="background-image: url(@blog.Banner.Replace(@"\","/"));">
+                    </div>
+
+                    <div class="card-header">
+                        @blog.BlogDate
+                        <h4 class="card-title">@blog.BlogTitle</h4>
+                    </div>
+                    <div class="card-body">
+                        @((MarkupString)blog.BlogSummary)
+                    </div>
+                    <div class="card-footer" style="margin-top:5px; padding-top:6px; border-top:1px solid #ddd;">
+                        <a href="blog/@blog.Link" style="float:right; font-size:17px;">Read more <i style="float:right; margin:4px 12px;" class="oi oi-arrow-right"></i></a>
+                    </div>
+                </a>
+
+
+            }
+        </div>
+    </div>
+    <div class="row" style="justify-content:center;">
+
+        @if (ShowPreviousButton)
+        {
+            <button class="btn btn-light"
+                    @onclick="Previous">
+                <b>&#x3C; Previous</b>
+            </button>
+        }
+        @if (ShowNextButton)
+        {
+            <button class="btn btn-light"
+                    @onclick="Next">
+                <b>Next &#x3E;</b>
+            </button>
+        }
+        </div>
+</section>
+                }
+                
+                @code {
+               
+               
+                BlogsPaged colBlogs =
+                    new BlogsPaged()
+                    {
+                        Blogs = new List<Blogs>(),
+                        BlogCount = 0
+                    };
+
+                bool ShowPreviousButton
+                {
+                    get
+                    {
+                        return (SearchState.CurrentPage > 1);
+                    }
+                }
+
+                bool ShowNextButton
+                {
+                    get
+                    {
+                        return (
+                            (colBlogs.BlogCount > (SearchState.CurrentPage * 5))
+                            );
+                    }
+                }
+
+              
+                protected override async Task OnInitializedAsync()
+                {
+                    if (SearchState.CurrentPage == 0)
+                    {
+                        SearchState.CurrentPage = 1;
+                    }
+
+                    if (SearchState.CurrentCategoryID == null)
+                    {
+                        SearchState.CurrentCategoryID = "0";
+                    }
+
+                    // We access BlogsService using @Service
+                    colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+
+                }
+
+               
+
+
+                
+
+               
+                async Task Previous()
+                {
+                    if (SearchState.CurrentPage > 1)
+                    {
+                        SearchState.CurrentPage = SearchState.CurrentPage - 1;
+                        colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+                    }
+                }
+
+                async Task Next()
+                {
+                    SearchState.CurrentPage = SearchState.CurrentPage + 1;
+                    colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+                }
+                }

@@ -1,0 +1,220 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor httpContextAccessor
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SearchState SearchState
+@inject IConfiguration _configuration
+@inject IHttpContextAccessor httpContextAccessor
+@inject NavigationManager NavigationManager
+
+@inject IHeadElementHelper HeadElementHelper
+@page "/contact"
+<Title>Contact Muayyat Billah</Title>
+
+<!-- Header section
+================================================== -->
+<section id="header" class="header-four">
+    <div class="container">
+        <div class="row">
+
+            <div class="col-md-offset-3 col-md-6 col-sm-offset-2 col-sm-8">
+                <div class="header-thumb">
+                    <h1 class="wow fadeIn" data-wow-delay="0.6s">Contact Me</h1>
+                    <h3 class="wow fadeInUp" data-wow-delay="0.9s">I try as much to respond asap.</h3>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Contact section
+================================================== -->
+<section id="contact">
+    <div class="container">
+        <div class="row">
+
+          
+
+
+
+
+
+            @if (!contacted)
+            {
+
+                <div class="wow fadeInUp col-md-6 col-sm-12" data-wow-delay="1.6s">
+                    <h1>Let's talk!</h1>
+                    <div class="contact-form">
+
+                        <EditForm id="contact-form" Model="@Scontact" OnValidSubmit="@SaveBlog">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <InputText id="name" @bind-Value="@Scontact.Fullname" class="form-control" placeholder="Full Name" />
+                            <InputText id="email" @bind-Value="@Scontact.Email" class="form-control" placeholder="Email" />
+                            <InputText id="phone" @bind-Value="@Scontact.Phone" class="form-control" placeholder="Phone" />
+                            <InputTextArea id="details" @bind-Value="@Scontact.Details" class="form-control" placeholder="Details" />
+                            <input type="submit" class="form-control" value="Send" />
+                        </EditForm>
+                    </div>
+                </div>
+
+
+            }
+            else
+            {
+
+                <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+                    <div class="modal-dialog modal-sm" style="top:30%;">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Message Sent</h4>
+                            </div>
+                            <div class="modal-body">@Scontact.Fullname, your message has been sent successfully, i will respond as soon as possible through @Scontact.Email.</div> <br />
+
+                            <div class="modal-footer" style="justify-content:space-between; display:flex;">
+                                <button class="btn btn-primary" @onclick="ContactAgain">Contact Again</button>
+
+                                <button class="btn btn-light" @onclick="()=> { NavigationManager.NavigateTo(NavigationManager.BaseUri); }">Its Ok</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                }
+            <div class="clearfix"></div>
+            <div class="col-md-6">
+            <div class="col-md-4 col-sm-12">
+                <div class="wow fadeInUp media" data-wow-delay="0.3s">
+                    <div class="media-object pull-left">
+                        <i class="fa fa-tablet"></i>
+                    </div>
+                    <div class="media-body">
+                        <h3 class="media-heading">Phone</h3>
+                        <p>+23 481 437 777 34</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-sm-12">
+                <div class="wow fadeInUp media" data-wow-delay="0.6s">
+                    <div class="media-object pull-left">
+                        <i class="fa fa-envelope"></i>
+                    </div>
+                    <div class="media-body">
+                        <h3 class="media-heading">Email</h3>
+                        <p>muayyat@outlook.com</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-sm-12">
+                <div class="wow fadeInUp media" data-wow-delay="0.9s">
+                    <div class="media-object pull-left">
+                        <i class="fa fa-globe"></i>
+                    </div>
+                    <div class="media-body">
+                        <h3 class="media-heading">Address</h3>
+                        <p>
+                            Jos, Nigeria<br>
+                            932101
+                        </p>
+                    </div>
+                </div>
+            </div>
+           </div>
+
+        </div>
+    </div>
+</section>
+
+@code {
+    // AuthenticationState is available as a CascadingParameter
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+
+    ContactDTO Scontact = new ContactDTO();
+    public bool contacted = false;
+
+    public System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the current user
+        CurrentUser = (await authenticationStateTask).User;
+
+    }
+
+
+
+
+
+    async Task SaveBlog()
+    {
+        try
+        {
+
+            Scontact.Date = DateTime.UtcNow;
+
+            Scontact.Source = NavigationManager.Uri;
+
+
+            Scontact.User = " from " + httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+            // Save the result
+            var result =
+            @Service.SendContactAsync(Scontact);
+
+            if (result.IsCompletedSuccessfully)
+            {
+                // Log
+                await LogAction($"Contacted Me #{result.Result.Id}");
+                contacted = true;
+                await OnInitializedAsync();
+
+            }
+            else
+            {
+                // Log
+                await LogAction($"Failed Contact Me #{result.Exception.Message}");
+
+            }
+        }
+
+
+        catch (Exception ex)
+        {
+            //  strError = ex.GetBaseException().Message;
+        }
+
+    }
+    async void ContactAgain()
+    {
+        contacted = false;
+    }
+
+    private async Task LogAction(string strAction)
+    {
+        // Get the current user
+        var CurrentUser = (await authenticationStateTask).User;
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+        objLog.LogUserName = (CurrentUser.Identity != null) ? CurrentUser.Identity.Name : httpContextAccessor.HttpContext.Session.Id.ToString();
+        objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await @Service.CreateLogAsync(objLog);
+    }
+}

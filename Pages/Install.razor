@@ -1,0 +1,178 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor httpContextAccessor
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SearchState SearchState
+@inject IConfiguration _configuration
+@inject IHttpContextAccessor httpContextAccessor
+@inject NavigationManager NavigationManager
+@layout InstallLayout
+@inject IHeadElementHelper HeadElementHelper
+@inject ApplicationDbContext _context
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment webh
+@page "/install"
+@if(_UserManager.Users.Any())
+{
+    NavigationManager.NavigateTo(NavigationManager.BaseUri);
+}
+<Title>Install Muayyat Billah</Title>
+<!--RadzenLogin AllowResetPassword="false" ResetPasswordText="Forgot password"></!--RadzenLogin-->
+<div class="row" style="justify-content:center; margin:50px auto;">
+    <div class="card card-user col-10" style="max-width:500px;">
+        <div class="card-header">
+            <h2 class="card-title">Install Bilog</h2>
+        </div>
+        <EditForm Model="Setuu" OnValidSubmit="Seting" class="card-body">
+
+            <div class="form-group">
+                <label>Admin Email</label>
+                <InputText @bind-Value="Setuu.Email" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <InputText @bind-Value="Setuu.Password" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Website Name</label>
+                <InputText @bind-Value="Setuu.AppName" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label>Database Connection String</label>
+                <InputText @bind-Value="Setuu.Connstring" class="form-control" />
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-success text-white">Install</button>
+            </div>
+        </EditForm>
+    </div>
+    @if (load)
+    {
+        <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+            <div class="modal-dialog modal-sm" style="top:30%;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Installing</h4>
+                    </div>
+                    <div class="modal-body">Your blog is installing, you will be redirected to homepage once completed.</div> <br />
+
+                    <div class="modal-footer" style="justify-content:space-between;">
+                       </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+<!-- Header section
+================================================== -->
+
+@code {
+
+
+    Seeder Setuu = new Seeder();
+
+    bool load = false;
+    protected override async Task OnInitializedAsync()
+    {
+        _context.Database.EnsureCreated();
+        if (!_context.Database.CanConnect())
+
+            NavigationManager.NavigateTo("Error");
+    }
+
+
+    async Task Seting()
+    {
+        load = true;
+
+        //_context.Database.Migrate();
+        var usr = new ApplicationUser
+        {
+            Email = Setuu.Email,
+            UserName = Setuu.Email,
+            EmailConfirmed = true
+        };
+        await _UserManager.CreateAsync(usr, Setuu.Password);
+        var htr = await _UserManager.FindByEmailAsync(Setuu.Email);
+        var rol = new IdentityRole {
+            Name = "Administrators"
+        };
+        _RoleManager.CreateAsync(rol);
+        _UserManager.AddToRoleAsync(htr, "Administrators");
+
+        var setting = new List<Settings>
+        {
+            new Settings { SettingName= "SMTPFromEmail", SettingValue = Setuu.Email },
+            new Settings { SettingName= "ApplicationName", SettingValue = Setuu.AppName },
+            new Settings { SettingName= "VerifiedRegistration", SettingValue = "True" },
+            new Settings { SettingName= "SMTPServer", SettingValue = Setuu.SmtpServer },
+            new Settings { SettingName= "SMTPUserName", SettingValue = Setuu.Email },
+            new Settings { SettingName= "SMTPPassword", SettingValue = Setuu.Password},
+            new Settings { SettingName= "AllowRegistration", SettingValue = "False" },
+            new Settings { SettingName= "SMTPSecure", SettingValue = "True" },
+            new Settings { SettingName= "SMTPAuthendication", SettingValue = "Basic" },
+            new Settings { SettingName= "ApplicationLogo", SettingValue = @"images\leopard.jpg" },
+            new Settings { SettingName= "ApplicationHeader", SettingValue = "Hey" }
+
+        };
+        _context.Settings.AddRange(setting);
+        _context.SaveChanges();
+
+        var bgj = new Blogs {
+            Banner = @"images\billah.jpg",
+            BlogTitle = "Muayyat Billah",
+            BlogDate = DateTime.Now,
+            BlogContent = "Hi there, am moving fast",
+            Link = "muayyat",
+            BlogId = 1,
+            BlogSummary = "Thats pretty cool",
+            BlogUserName = "Muayyat"
+        };
+        _context.Blogs.Add(bgj);
+        _context.SaveChanges();
+
+        var pgj = new Projects
+        {
+            Link = "this",
+            ProjectTitle = "Clear View",
+            ProjectClient = "Mr Nice Guy",
+            ProjectCategory = "web",
+            ELink = "muayyat.com",
+            ProjectDate = DateTime.Now,
+            ProjectContent = "Machine Learning",
+            Banner = @"images\billah.jpg",
+            ProjectId = 1
+        };
+        _context.Projects.Add(pgj);
+        _context.SaveChanges();
+
+        NavigationManager.NavigateTo(NavigationManager.BaseUri, true);
+
+    }
+
+
+
+    private async Task LogAction(string strAction)
+    {
+
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+        //objLog.LogUserName = (CurrentUser.Identity != null) ? CurrentUser.Identity.Name : httpContextAccessor.HttpContext.Session.Id.ToString();
+        objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await @Service.CreateLogAsync(objLog);
+    }
+}

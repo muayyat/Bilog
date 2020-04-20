@@ -1,0 +1,58 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor httpContextAccessor
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SearchState SearchState
+@inject IConfiguration _configuration
+@inject IHttpContextAccessor httpContextAccessor
+@inject NavigationManager NavigationManager
+
+@inject IHeadElementHelper HeadElementHelper
+@page "/terms"
+<Title>Terms of Usage</Title>
+<h2>Policy</h2>
+@code {
+        // AuthenticationState is available as a CascadingParameter
+        [CascadingParameter]
+        private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+
+        public System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            // Get the current user
+            CurrentUser = (await authenticationStateTask).User;
+
+
+            // Log
+            await LogAction($"Visited #{NavigationManager.Uri}");
+            
+        }
+
+    
+    private async Task LogAction(string strAction)
+    {
+        // Get the current user
+        var CurrentUser = (await authenticationStateTask).User;
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+        objLog.LogUserName = (CurrentUser.Identity != null) ? CurrentUser.Identity.Name : httpContextAccessor.HttpContext.Session.Id.ToString();
+        objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await @Service.CreateLogAsync(objLog);
+    }
+}

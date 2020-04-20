@@ -1,0 +1,203 @@
+﻿@page "/Blog/{Link}"
+
+@using Microsoft.AspNetCore.Http
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject GeneralSettingsService _GeneralSettingsService
+@inject BlogsService _BlogsService
+@inject IHttpContextAccessor httpContextAccessor
+@inject NavigationManager NavigationManager
+@inject IHeadElementHelper HeadElementHelper
+@inherits OwningComponentBase
+@inject ApplicationDbContext _context
+@inject IToastService toastService
+
+@if (SelectedBlog.BlogId != 0)
+{
+    <Title>@SelectedBlog.BlogTitle</Title>
+    <Meta Property="og:url" Content="@AbsoluteUrlOfThisPage" />
+    <Meta Property="og:title" Content="@SelectedBlog.BlogTitle" />
+
+
+    <!-- Header section
+    ================================================== -->
+    <section id="header" class="header-five" style="background-image:url(@SelectedBlog.Banner.Replace(@"\", "/"));">
+        <div class="container">
+            <div class="row">
+
+                <div class="col-md-offset-3 col-md-6 col-sm-offset-2 col-sm-8">
+                    <div class="header-thumb">
+                        <h1 class="wow fadeIn" data-wow-delay="0.6s">@SelectedBlog.BlogTitle</h1>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Single Post section
+    ================================================== -->
+    <section id="single-post">
+        <div class="container">
+            <div class="row">
+
+                <div class="wow fadeInUp col-md-offset-1 col-md-10 col-sm-offset-1 col-sm-10" data-wow-delay="2.3s">
+                    <div class="blog-thumb">
+
+                        <h1>@SelectedBlog.BlogTitle</h1>
+                        <div class="post-format">
+                            <span>By <a href="#">@SelectedBlog.BlogDisplayName</a></span>
+                            <span><i class="fa fa-date"></i> @SelectedBlog.BlogDate</span>
+                        </div>
+                        @((MarkupString)SelectedBlog.BlogSummary)
+
+                        @((MarkupString)SelectedBlog.BlogContent)
+
+
+                        <div class="blog-comment">
+                            <h3>Comments</h3>
+                            @foreach (var com in Comments)
+                            {
+                                <div class="media">
+                                    <div class="media-object pull-left">
+                                        <img src="images/comment1.jpg" class="img-responsive" alt="blog">
+                                    </div>
+                                    <div class="media-body">
+                                        <h4 class="media-heading">@com.Fullname</h4>
+                                        <h5>@com.CommentCreated</h5>
+                                        <p>@com.Content</p>
+                                    </div>
+                                </div>
+                            }
+
+                        </div>
+                        <div class="blog-comment-form">
+                            <h3>Leave a comment</h3>
+                            <EditForm Model="newcom" OnValidSubmit="NewComment">
+                                <InputText @bind-Value="newcom.Fullname" class="form-control" placeholder="Name" />
+                                <InputText @bind-Value="newcom.Email" class="form-control" placeholder="Email" />
+                                <InputTextArea @bind-Value="newcom.Content" class="form-control" placeholder="Comment" rows="5" required id="comment"></InputTextArea>
+                                <div class="contact-submit">
+                                    <input name="submit" type="submit" class="form-control" id="submit" value="Submit a comment">
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+}
+else
+{
+
+    <!-- Preloader section
+    ================================================== -->
+    <div class="preloader">
+
+        <div class="sk-spinner sk-spinner-pulse"></div>
+
+    </div>
+}
+@code {
+  
+    [Parameter] public string Link { get; set; }
+
+    BlogDTO SelectedBlog = new BlogDTO() { BlogId = 0 };
+    IList<Comment> Comments { get; set; }
+    Comment newcom = new Comment();
+
+    GeneralSettings objGeneralSettings = new GeneralSettings();
+
+   
+    string AbsoluteUrlOfThisPage => NavigationManager.ToAbsoluteUri($"/Blog/{Link}").AbsoluteUri;
+    bool commented = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _GeneralSettingsService = (GeneralSettingsService)ScopedServices.GetService(typeof(GeneralSettingsService));
+            _BlogsService = (BlogsService)ScopedServices.GetService(typeof(BlogsService));
+
+            objGeneralSettings = await _GeneralSettingsService.GetGeneralSettingsAsync();
+            SelectedBlog = await _BlogsService.GetBlogLinkAsync(Link);
+            Comments = _context.Comment.Where(x => x.BlogId == SelectedBlog.BlogId).ToList();
+
+            await LogAction($"View Blog Link #{SelectedBlog.BlogId}");
+
+            
+
+            await HeadElementHelper.SetMetaElementsAsync(
+            ByProp("og:description", SelectedBlog.BlogTitle),
+            ByName("description", SelectedBlog.BlogTitle)
+            );
+        }
+        catch
+        {
+            await LogAction($"Error Viewing Blog Link #{Link}");
+            SelectedBlog = new BlogDTO() { BlogDate = DateTime.Now, BlogTitle = "ERROR - Page Not Found" };
+        }
+    }
+
+    protected override async Task
+        OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+
+
+
+    void Back()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    async Task NewComment()
+    {
+        //  newcom.CommentUserId = httpContextAccessor.HttpContext.;
+        newcom.CommentCreated = DateTime.Now;
+        newcom.CommentUpdated = null;
+        newcom.BlogId = SelectedBlog.BlogId;
+        _context.Comment.Add(newcom);
+        _context.SaveChanges();
+        toastService.ShowSuccess("", "Your commented has been added successfully");
+        await OnInitializedAsync();
+    }
+    async Task Reload()
+    {
+      //  NavigationManager.NavigateTo(NavigationManager.Uri);
+        OnInitializedAsync();
+    }
+    async Task UpdateComment()
+    {
+        _context.Comment.Update(newcom);
+        _context.SaveChanges();
+    }
+    async Task RemoveComment()
+    {
+        _context.Comment.Remove(newcom);
+        _context.SaveChanges();
+    }
+
+    private async Task LogAction(string strAction)
+    {
+       
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+         objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await _BlogsService.CreateLogAsync(objLog);
+    }
+}
