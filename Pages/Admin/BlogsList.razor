@@ -1,0 +1,203 @@
+﻿@page "/dashboard/blogs"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@using static Toolbelt.Blazor.HeadElement.MetaElement
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject SearchState SearchState
+@inject IConfiguration _configuration
+@inject IHttpContextAccessor httpContextAccessor
+@inject IHeadElementHelper HeadElementHelper
+@inherits OwningComponentBase<BlogsService>
+@inject NavigationManager nav
+@inject ApplicationDbContext _context
+
+<Title>Blogs List</Title>
+<Meta Property="og:title" Content="Blazor-Blogs" />
+
+
+
+    <div class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Blogs List</h4>
+                        <a class="btn btn-primary" href="dashboard/blog/new">New Blog</a>
+
+                    </div>
+                    <div class="card-body">
+
+
+                        @if (colBlogs.Blogs.Count == 0)
+                        {
+
+                            <!-- Preloader section
+        ================================================== -->
+                            <div class="preloader">
+
+                                <div class="sk-spinner sk-spinner-pulse"></div>
+
+                            </div>
+                        }
+                        else
+                        {
+
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead class=" text-primary">
+                                    <th>
+                                    </th>
+                                    <th>
+                                        Title
+                                    </th>
+                                    <th>
+                                        Created
+                                    </th>
+                                    <th>
+                                    </th>
+                                    </thead>
+                                    <tbody>
+
+                                        @foreach (var blog in colBlogs.Blogs)
+                                        {
+                                            @if (string.IsNullOrWhiteSpace(blog.Link))
+                                            {
+                                                blog.Link = blog.BlogId.ToString();
+                                            }
+
+                                            <tr @onclick="() => { nav.NavigateTo(nav.Uri +'/' + blog.Link); }">
+                                                <td>
+                                                    <img src="@blog.Banner" class="img-responsive" alt="Blog" style="height:40px;">
+                                                </td>
+                                                <td>
+                                                    @blog.BlogTitle
+                                                </td>
+
+                                                <td>
+                                                    @blog.BlogDate
+                                                </td>
+                                                <td>
+                                                </td>
+                                            </tr>
+
+
+
+
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if (ShowPreviousButton)
+                            {
+                                <button class="btn btn-light"
+                                        @onclick="Previous">
+                                    <b>&#x3C;</b>
+                                </button>
+                            }
+                            @if (ShowNextButton)
+                            {
+                                <button class="btn btn-light"
+                                        @onclick="Next">
+                                    <b>&#x3E;</b>
+                                </button>
+                            }
+
+
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    
+    List<Categorys> colCategorys = new List<Categorys>();
+
+    BlogsPaged colBlogs =
+        new BlogsPaged()
+        {
+            Blogs = new List<Blogs>(),
+            BlogCount = 0
+        };
+
+    bool ShowPreviousButton
+    {
+        get
+        {
+            return (SearchState.CurrentPage > 1);
+        }
+    }
+
+    bool ShowNextButton
+    {
+        get
+        {
+            return (
+                (colBlogs.BlogCount > (SearchState.CurrentPage * 5))
+                );
+        }
+    }
+
+    bool UserIsAnAdmin = false;
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (SearchState.CurrentPage == 0)
+        {
+            SearchState.CurrentPage = 1;
+        }
+
+        if (SearchState.CurrentCategoryID == null)
+        {
+            SearchState.CurrentCategoryID = "0";
+        }
+
+
+
+        colCategorys = _context.Categorys.ToList();
+
+        // We access BlogsService using @Service
+        colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+
+
+    }
+
+   
+
+    async Task BlogUpdatedEvent()
+    {
+        colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+    }
+
+    async Task ChangeCategory(object value, string name)
+    {
+        SearchState.CurrentPage = 1;
+        SearchState.CurrentCategoryID = (value == null) ? "0" : value.ToString();
+
+        colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+    }
+
+    async Task Previous()
+    {
+        if (SearchState.CurrentPage > 1)
+        {
+            SearchState.CurrentPage = SearchState.CurrentPage - 1;
+            colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+        }
+    }
+
+    async Task Next()
+    {
+        SearchState.CurrentPage = SearchState.CurrentPage + 1;
+        colBlogs = await @Service.GetBlogsAsync(SearchState.CurrentPage, Convert.ToInt32(SearchState.CurrentCategoryID));
+    }
+}

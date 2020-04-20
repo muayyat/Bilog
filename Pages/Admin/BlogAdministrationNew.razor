@@ -1,0 +1,563 @@
+﻿@page "/dashboard/blog/new"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor httpContextAccessor
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@inject SearchState SearchState
+@inject IHeadElementHelper HeadElementHelper
+@inject NavigationManager nav
+@inject IToastService toastService
+
+<Title>New Blog</Title>
+<Meta Property="og:title" Content="New Blog" />
+
+<div class="content">
+    <div class="row">
+        <div class="col-md-10">
+            <div class="card card-user">
+                @if (string.IsNullOrWhiteSpace(SelectedBlog.Banner))
+                {
+                    <style>
+                        .hgtr {
+                            height: 200px !important;
+                            background-size: cover;
+                            background-position: center;
+                            background-image: url(/uploads/demo.png);
+                        }
+                    </style>
+                }
+                else
+                {
+                    <style>
+                        .hgtr {
+                            height: 200px !important;
+                            background-size: cover;
+                            background-position: center;
+                            background-image: url(@SelectedBlog.Banner.Replace(@"\","/"));
+                        }
+                    </style>
+                }
+
+                <div class="image hgtr" @onclick="SelectLogo">
+
+
+                    <style>
+                        .camage {
+                            position: absolute;
+                            left: calc(50% - 2rem);
+                            right: 0;
+                            top: calc(50% - 3.5rem);
+                            bottom: 0;
+                            background: white;
+                            padding: 14px 8px 8px 8px;
+                            font-size: 4rem;
+                            border-radius: 50%;
+                            height: 7rem;
+                            width: 7rem;
+                            text-align: center;
+                            border: none;
+                        }
+
+                        .ql-tooltip.ql-flip {
+                            left: 0 !important;
+                        }
+
+                        .ql-header {
+                            margin: 10px 20px 0 0;
+                            border: 1px solid #ddd;
+                        }
+
+                        .ql-link {
+                            margin: 10px 0 0 -16px;
+                        }
+                        .ql-video{
+                            margin:10px 0 0 0;
+                        }
+                        .ql-font{
+                                  margin: 10px 20px 0 0;
+                            border: 1px solid #ddd;
+                      
+                        }
+                    </style>
+
+                    <button type="button" class="camage" @onclick="SelectLogo"><i class="nc-icon nc-camera-compact"></i></button>
+                </div>
+
+                <div class="card-header">
+                    <h5 class="card-title">New Post</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedBlog.BlogTitle" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Link</label>
+                                <span style="display:table; left:4px; bottom:-20px; position:absolute; color:blue;">
+                                    <text>@webs</text>blog/@if (string.IsNullOrWhiteSpace(SelectedBlog.Link) && !string.IsNullOrWhiteSpace(SelectedBlog.BlogTitle))
+                                    {<text>@SelectedBlog.BlogTitle.Replace(" ", "-")</text>}
+                                else if (!string.IsNullOrWhiteSpace(SelectedBlog.Link))
+                                {<text>@SelectedBlog.Link</text>}
+                                </span><input class="form-control" type="text"
+                                              @bind="SelectedBlog.Link" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group" style="flex:1; margin-top:20px;">
+                            <label>Brief</label>
+                            @if (!RichTextEditorModeSummary)
+                            {
+                                <textarea class="form-control" @bind="@SelectedBlog.BlogSummary" rows="8" />
+                            }
+                            else
+                            {
+                                <BlazoredTextEditor @ref="@QuillHtmlSummary">
+                                    <ToolbarContent>
+                                        <select class="ql-header">
+                                            <option selected=""></option>
+                                            <option value="1"></option>
+                                            <option value="2"></option>
+                                            <option value="3"></option>
+                                            <option value="4"></option>
+                                            <option value="5"></option>
+                                        </select>
+                                        <select class="ql-font"></select>
+                                        <span class="ql-formats">
+                                            <button class="ql-bold"></button>
+                                            <button class="ql-italic"></button>
+                                            <button class="ql-underline"></button>
+                                            <button class="ql-strike"></button>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <select class="ql-color"></select>
+                                            <select class="ql-background"></select>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <button class="ql-list" value="ordered"></button>
+                                            <button class="ql-list" value="bullet"></button>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <button class="ql-link"></button>
+                                            <button class="btn btn-link" id="custom-button"
+                                                    @onclick="InsertImageSummaryClick">
+                                                <img src="imageIcon.png" style="border:hidden" />
+                                            </button>
+                                            <button class="ql-video" value="video"></button>
+                                        </span>
+                                    </ToolbarContent>
+                                    <EditorContent>
+                                        @((MarkupString)SelectedBlog.BlogSummary)
+                                    </EditorContent>
+                                </BlazoredTextEditor>
+                            }
+                            @if (!RichTextEditorModeSummary)
+                            {
+                                <button type="button" class="btn btn-link" @onclick="RichTextEditorSummary"><h6>Rich Text Editor</h6></button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-link" @onclick="RawHTMLEditorSummary"><h6>Raw HTML Editor</h6></button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group" style="flex:1; margin-top:20px;">
+                            <label>Content</label>
+                            @if (!RichTextEditorMode)
+                            {
+                                <textarea class="form-control" @bind="@SelectedBlog.BlogContent" rows="8" />
+                            }
+                            else
+                            {
+
+                                <BlazoredTextEditor @ref="@QuillHtml">
+                                    <ToolbarContent>
+                                        <select class="ql-header">
+                                            <option selected=""></option>
+                                            <option value="1"></option>
+                                            <option value="2"></option>
+                                            <option value="3"></option>
+                                            <option value="4"></option>
+                                            <option value="5"></option>
+                                        </select>
+                                        <select class="ql-font"></select>
+
+                                        <span class="ql-formats">
+                                            <button class="ql-bold"></button>
+                                            <button class="ql-italic"></button>
+                                            <button class="ql-underline"></button>
+                                            <button class="ql-strike"></button>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <select class="ql-color"></select>
+                                            <select class="ql-background"></select>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <button class="ql-list" value="ordered"></button>
+                                            <button class="ql-list" value="bullet"></button>
+                                        </span>
+                                        <span class="ql-formats">
+                                            <button class="ql-link"></button>
+                                            <button class="btn btn-link" id="custom-button"
+                                                    @onclick="InsertImageClick">
+                                                <img src="imageIcon.png" style="border:hidden" />
+                                            </button>
+                                            <button class="ql-video" value="video"></button>
+
+                                        </span>
+                                    </ToolbarContent>
+                                    <EditorContent>
+                                        @((MarkupString)SelectedBlog.BlogContent)
+                                    </EditorContent>
+                                </BlazoredTextEditor>
+                            }
+                            @if (!RichTextEditorMode)
+                            {
+                                <button type="button" class="btn btn-link" @onclick="RichTextEditor"><h6>Rich Text Editor</h6></button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-link" @onclick="RawHTMLEditor"><h6>Raw HTML Editor</h6></button>
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Date & Time</label>
+                                <input class="form-control" type="date"
+                                       @bind="SelectedBlog.BlogDate" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+                            <div class="form-group">
+
+                                <label>
+                                    Categories  <button type="button" class="" @onclick="OpenCategoryManagerControl">Edit</button>
+                                </label>
+
+                                <RadzenDropDown AllowClear="true"
+                                                AllowFiltering="true"
+                                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                @bind-Value="selectedBlogCategorys" Multiple="true"
+                                                Placeholder="Select..."
+                                                Data="@colCategorys" TextProperty="Title"
+                                                ValueProperty="CategoryId"
+                                                Style="width:100%;" />
+                            </div>
+                        </div>
+                    </div>
+                    <span style="color:red">@strError</span>
+                    <div class="row" style="justify-content:space-between;">
+
+                        <button class="btn btn-primary"
+                                @onclick="SaveBlog">
+                            Save
+                        </button>
+                        <button class="btn btn-primary btn-danger"
+                                @onclick="()=> { gobk = true; }">
+                            Cancel
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (gobk)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+        <div class="modal-dialog modal-sm" style="        top: 30%;
+">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Discard Changes</h4>
+                </div>
+                <div class="modal-body">You are clearing the post and all its contents</div> <br />
+
+                <div class="modal-footer" style="justify-content:space-between;">
+                    <button class="btn btn-danger" @onclick="GoBack">Yes</button>
+
+                    <button class="btn btn-primary" @onclick="()=> { gobk = false; }">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@if (saved)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Saved Successfully</h4>
+                </div>
+                <div class="modal-body">Your new post has been saved successfully </div> <br />
+
+                <div class="modal-footer" style="justify-content:space-between;">
+                    <button class="btn btn-info" @onclick="GoBack"><i class="oi oi-arrow-left"></i> List</button>
+
+                    <button class="btn btn-light" @onclick="GoEdit">Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+<FileManager @ref="FileManagerControlSummary"
+             ImageSelected="InsertImageSummary" />
+
+<FileManager @ref="FileManagerControlBanner"
+             ImageSelected="InsertImageBanner" />
+<FileManager @ref="FileManagerControl"
+             ImageSelected="InsertImage" />
+
+<CategoryManager @ref="CategoryManagerControl"
+                 CategoryUpdated="UpdateCategories" />
+
+
+@code {
+    // AuthenticationState is available as a CascadingParameter
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+
+    //   BlogDTO SelectedBlog;
+    BlogDTO SelectedBlog = new BlogDTO();
+
+
+    public System.Security.Claims.ClaimsPrincipal CurrentUser;
+
+    private FileManager FileManagerControlSummary;
+    private FileManager FileManagerControlBanner;
+    private FileManager FileManagerControl;
+    private CategoryManager CategoryManagerControl;
+
+    BlazoredTextEditor QuillHtmlSummary;
+    BlazoredTextEditor QuillHtml;
+    bool RichTextEditorMode = true;
+    bool RichTextEditorModeSummary = true;
+    bool gobk = false;
+    bool saved = false;
+    List<CategoryDTO> colCategorys = new List<CategoryDTO>();
+    IEnumerable<string> selectedBlogCategorys = new string[] { };
+    string strError;
+    string webs;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the current user
+        CurrentUser = (await authenticationStateTask).User;
+
+        colCategorys = await @Service.GetCategorysAsync();
+        SelectedBlog.Banner = "/uploads/demo.png";
+        webs = nav.BaseUri;
+        if (nav.BaseUri.Contains("https"))
+            webs = nav.BaseUri.Replace(@"https://", "");
+        else if (nav.BaseUri.Contains("http"))
+            webs = nav.BaseUri.Replace(@"http://", "");
+        SelectedBlog.BlogDate = DateTime.Now;
+    }
+
+    //CategoryManagerControl
+
+    void OpenCategoryManagerControl()
+    {
+        // Open CategoryManagerControl
+        CategoryManagerControl.SetShowManager(true);
+    }
+
+
+
+    public void AddNewBlog()
+    {
+        // Set the default date
+        SelectedBlog.BlogDate = DateTime.Now;
+        // Set Id to 0 so we know it is a new record
+        SelectedBlog.BlogId = 0;
+        // Set the selected Blog Categorys
+        selectedBlogCategorys = new string[] { };
+        // Clear any error messages
+        strError = "";
+    }
+    void SelectLogo()
+    {
+        FileManagerControlBanner.SetShowFileManager(true);
+    }
+    async Task GoBack()
+    {
+        nav.NavigateTo("dashboard/blogs");
+    }
+    async Task GoEdit()
+    {
+        nav.NavigateTo(nav.Uri.Replace("/new", "s/" + SelectedBlog.Link));
+    }
+    void InsertImageBanner(string paramImageURL)
+    {
+        SelectedBlog.Banner = paramImageURL;
+
+        FileManagerControlBanner.SetShowFileManager(false);
+    }
+
+
+    async Task SaveBlog()
+    {
+        try
+        {
+            // Create new Blog
+            BlogDTO objNewBlog = new BlogDTO();
+
+            objNewBlog.BlogDate =
+                SelectedBlog.BlogDate;
+             objNewBlog.Link =
+              SelectedBlog.Link;
+          
+            @if (string.IsNullOrWhiteSpace(SelectedBlog.Link))
+                objNewBlog.Link = SelectedBlog.BlogTitle.Replace(" ", "-").ToLower();
+
+            objNewBlog.BlogTitle =
+                SelectedBlog.BlogTitle;
+             objNewBlog.Banner = SelectedBlog.Banner;
+
+            if (RichTextEditorModeSummary)
+            {
+                objNewBlog.BlogSummary =
+                    await this.QuillHtmlSummary.GetHTML();
+            }
+            else
+            {
+                objNewBlog.BlogSummary =
+                    SelectedBlog.BlogSummary;
+            }
+
+            if (RichTextEditorMode)
+            {
+                objNewBlog.BlogContent =
+                    await this.QuillHtml.GetHTML();
+            }
+            else
+            {
+                objNewBlog.BlogContent =
+                    SelectedBlog.BlogContent;
+            }
+
+            objNewBlog.BlogUserName =
+                CurrentUser.Identity.Name;
+
+            // Save the result
+            var result =
+            @Service.CreateBlogAsync(objNewBlog, selectedBlogCategorys);
+
+            // Log
+            await LogAction($"Create Blog #{objNewBlog.BlogId}");
+            if (result.IsCompletedSuccessfully)
+            {
+                toastService.ShowSuccess("", "New Blog Post Saved Successfully");
+                saved = true;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+            toastService.ShowSuccess("Error", ex.GetBaseException().Message);
+
+        }
+
+    }
+
+
+    //Summary
+
+    private void RichTextEditorSummary()
+    {
+        RichTextEditorModeSummary = true;
+        StateHasChanged();
+    }
+
+    private async Task RawHTMLEditorSummary()
+    {
+        RichTextEditorModeSummary = false;
+        SelectedBlog.BlogSummary =
+            await this.QuillHtmlSummary.GetHTML();
+    }
+
+    private void RichTextEditor()
+    {
+        RichTextEditorMode = true;
+        StateHasChanged();
+    }
+
+    private async Task RawHTMLEditor()
+    {
+        RichTextEditorMode = false;
+        SelectedBlog.BlogContent =
+            await this.QuillHtml.GetHTML();
+    }
+
+    // Inserting Images
+
+    private void InsertImageSummaryClick()
+    {
+        FileManagerControlSummary.SetShowFileManager(true);
+    }
+
+    private void InsertImageClick()
+    {
+        FileManagerControl.SetShowFileManager(true);
+    }
+
+    async Task InsertImageSummary(string paramImageURL)
+    {
+        await this.QuillHtmlSummary.InsertImage(paramImageURL);
+
+        FileManagerControl.SetShowFileManager(false);
+    }
+
+    async Task InsertImage(string paramImageURL)
+    {
+        await this.QuillHtml.InsertImage(paramImageURL);
+
+        FileManagerControl.SetShowFileManager(false);
+    }
+
+    async Task UpdateCategories()
+    {
+        colCategorys = await @Service.GetCategorysAsync();
+    }
+
+    private async Task LogAction(string strAction)
+    {
+        // Get the current user
+        var CurrentUser = (await authenticationStateTask).User;
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+        objLog.LogUserName = (CurrentUser.Identity != null) ? CurrentUser.Identity.Name : "";
+        objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await @Service.CreateLogAsync(objLog);
+    }
+}

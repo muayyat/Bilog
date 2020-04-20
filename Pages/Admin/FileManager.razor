@@ -1,0 +1,530 @@
+﻿@using System.IO
+@using System.Drawing;
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
+
+@if (ShowFileManager)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#c0c0c05e; " role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content" style="height:84vh;">
+                <div class="modal-header">
+                    <b class="modal-title">Insert Image</b>
+                    <!-- Close Button -->
+                    <button type="button" class="close"
+                            @onclick="() => { ShowFileManager = false; }">
+                        <span aria-hidden="true">X</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="height:66vh; overflow:hidden">
+                    <div class="row">
+                        <div class="col-12" style="margin-bottom: 16px; display:@ju !important;">
+                            <h3>Folders</h3>
+                            <div class="row">
+                                <RadzenButton Click="AddFolder"
+                                              Text="New Folder"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Style="margin-bottom: 20px; margin-left:20px;padding:0 1rem;">
+
+                                </RadzenButton>
+
+                                <RadzenButton Click="DelFolder"
+                                              Text="Delete Folder"
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Style="margin-bottom: 20px; margin-left:20px;padding:0 1rem;">
+
+                                </RadzenButton>
+
+                            </div>
+
+
+                            <RadzenTree Change="@LogChange" Data="@Directories"
+                                        Expand="@LoadDirectory"
+                                        Style="width: 100%; height: 300px; text-transform:capitalize;">
+                                <RadzenTreeLevel Text="@GetTextForNode"
+                                                 Template="@FileOrFolderTemplate" /> 
+                            </RadzenTree>
+                        </div>
+                        
+                        <div class="col-12" style="margin-bottom: 16px; display: @hiiu !important;">
+                            <div class="row" style="margin:0 10px 0px 0px !important">
+                                <button @onclick="Drt" class="aptra" style="flex:2 2 29%; background:none; border:none; text-align:left; font-size:130%; text-transform:capitalize;"> @diru</button>
+                                <RadzenButton Click="Deltru"
+                                              Text=""
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Style=" padding:0 .71rem; font-size:130%; height:30px;" class="oi oi-trash">
+
+                                </RadzenButton>
+                                <RadzenButton Click="AddFolder"
+                                              Text=""
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Style=" margin-left:20px;padding:0 .71rem; font-size:130%; height:30px;" class="oi oi-plus">
+
+                                </RadzenButton>
+
+                            </div>
+                        </div>
+                        <div class="row kytr" style="justify-content:space-between;">
+                            <RadzenUpload ChooseText="Add Files" Multiple="true"
+                                          Accept="image/*"
+                                          Url=@($"/api/upload/multiple?CurrentDirectory={CurrentDirectory}")
+                                          Style="margin-bottom: 20px;padding:0 1rem;"
+                                          Progress="@((args) => OnProgress(args))" />
+                        </div>
+
+                        <RadzenDataList @ref="FileDataList" Data="@Files"
+                                        AllowPaging="true" TItem="FileObject"
+                                        WrapItems="true" PageSize="8" Style="position:relative;">
+
+                            <Template Context="file">
+                                <RadzenImage Path="@file.FilePath"
+                                             Style="@((file.FileName == SelectedFile.FileName)
+                                                          ?
+                                                          $"padding:5px;background-color:#479cc8;"
+                                                          :
+                                                          $"padding:5px;background-color:white;")"
+                                             Click="@((args) => SelectImage(file))" class="ytrf" />
+                            </Template>
+                        </RadzenDataList>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="justify-content:space-between !important;">
+                    <RadzenButton Disabled="@(SelectedFile.FileName == null)"
+                                  Text="Delete"
+                                  Click="DeleteSelectedFile"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Style="padding: 0 1rem !important;" />
+                    <RadzenButton Disabled="@(SelectedFile.FileName == null)"
+                                  Text="Select"
+                                  Click="SelectFile"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Style="padding: 0 1rem !important;" />
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowFolderDelPopup)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Delete</h4>
+                </div>
+                <div class="modal-content" align="center">
+                    <span>You are Deleting <b>@diru</b> and all of its content?</span> <br/>
+               <div style="display:block; text-align:left;
+width:100%; font-size:120%;"> Name: @diru <br/>
+                SubFolders: @fdr2
+                Files: @fdr
+                    </div>
+                    <div class="row" style="justify-content:space-between;">
+                        <RadzenButton Click="Delfa"
+                                      Text="No"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Style=" padding:0 1rem; font-size:130%; margin:20px;">
+</RadzenButton>
+                            <RadzenButton Click="DelFolder"
+                                          Text="Yes"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Style=" padding:0 1rem; font-size:130%; margin:20px;">
+                            </RadzenButton>
+                    </div>                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (ShowProgressBarPopup)
+{
+    <div class="modal" tabindex="-1" style="        display: block
+" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Upload Status</h4>
+                </div>
+                <div align="center">
+                    <RadzenProgressBar Value="@progress"
+                                       Unit="@info"
+                                       Visible="@(progress > 0)"
+                                       Style="margin-bottom: 20px" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@if (ShowFolderPopup)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#b5b5bd5e;" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Create Folder</h4>
+                    <button type="button" class="close"
+                            @onclick="CloseFolderPopup">
+                        <span aria-hidden="true">X</span>
+                    </button>
+                </div>
+                <div class="modal-body" align="center">
+                    <div style="display:flex;">
+                    <button type="button" style="color:dodgerblue; border:none; background:none; float:left; margin-top:-20px;"
+                            @onclick="CloseFolderPopup">
+                        /@diru/
+                    </button>
+                    <RadzenTextBox Placeholder="Folder Name"
+                                   @bind-Value="NewFolderName"
+                                   Style="margin-bottom: 20px" />
+                        </div>
+                    <RadzenButton Text="Save"
+                                  Click="AddFolderName"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Style="margin: 20px auto;height: 35px;" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // ImageSelected is an EventCallback that will
+    // notify the parent component when an image is selected
+    // passing the url of the image to the parent component
+    [Parameter] public EventCallback<string> ImageSelected { get; set; }
+
+    private RadzenDataList<FileObject> FileDataList;
+    private bool ShowFileManager = false;
+    private bool ShowProgressBarPopup = false;
+    private bool ShowFolderDelPopup = false;
+    private bool ShowFolderPopup = false;
+    private int progress;
+    private string info;
+    private string ju;
+    private string diru;
+    private string hiiu = "none";
+    private int fdr = 0;
+    private int fdr2 = 0;
+
+    private string CurrentDirectory = "";
+    private string CurrentRoot = "";
+    private string NewFolderName = "";
+    private FileObject SelectedFile = new FileObject();
+    private List<string> Directories = new List<string>();
+    private List<FileObject> Files = new List<FileObject>();
+    private Dictionary<DateTime, string> events =
+        new Dictionary<DateTime, string>();
+
+    protected override void OnInitialized()
+    {
+        CurrentRoot =
+            Path.Combine(HostEnvironment.WebRootPath, "uploads");
+        CurrentDirectory = CurrentRoot;
+        Directories.Add(CurrentDirectory);
+
+        LoadFiles();
+        ju = null;
+        hiiu = "none";
+
+    }
+
+    public void SetShowFileManager(bool paramSetting)
+    {
+        ShowFileManager = paramSetting;
+    }
+
+    //SelectFile
+
+    private async Task SelectFile()
+    {
+        await ImageSelected.InvokeAsync(SelectedFile.FilePath);
+    }
+
+    // Files
+
+    private void SelectImage(FileObject file)
+    {
+        if (SelectedFile.FileName == file.FileName)
+        {
+            SelectedFile = new FileObject();
+        }
+        else
+        {
+            SelectedFile = file;
+        }
+    }
+    private void Deltru()
+    {
+        ShowFolderDelPopup = true;
+    }
+ private void Delfa()
+    {
+        ShowFolderDelPopup = false;
+    }
+
+    private void LogChange(TreeEventArgs args)
+    {
+        // Get the current directory from the
+        // argument passed to the method
+        CurrentDirectory = args.Value as string;
+
+        // Set the RadzenDataList to page 1
+        FileDataList.FirstPage();
+
+        // Reload the FileDataList
+        LoadFiles();
+    }
+
+    private string GetTextForNode(object data)
+    { 
+        var kj = $"{Path.GetFileName((string)data)}       {Directory.GetDirectories((string)data).Count()}-Folders  {Directory.GetFiles((string)data).Count()}-Files";
+        
+           
+        return kj;
+    }
+private int GetTextForDirC(object data)
+    {
+       return Directory.GetDirectories((string)data).Count();
+     }
+
+    private int GetTextForFileC(object data)
+    {
+       return Directory.GetFiles((string)data).Count();
+     }
+
+    private RenderFragment<RadzenTreeItem>
+        FileOrFolderTemplate = (context) => builder =>
+        {
+            string path = context.Value as string;
+            bool isDirectory = Directory.Exists(path);
+
+            builder.OpenComponent<RadzenIcon>(0);
+            builder.AddAttribute(1,
+                "Icon", isDirectory ? "folder" :
+                "insert_drive_file");
+
+            if (!isDirectory)
+            {
+                builder.AddAttribute(2,
+                    "Style",
+                    "margin-left: 24px");
+            }
+            builder.CloseComponent();
+            builder.AddContent(3, context.Text);
+        };
+
+    private void LoadDirectory(TreeExpandEventArgs args)
+    {
+        CurrentDirectory = args.Value as string;
+
+
+        // Only get the folders not the files
+        args.Children.Data =
+            Directory.EnumerateFileSystemEntries(CurrentDirectory)
+            .Where(x => !x.Contains("."));
+        fdr = Directory.GetFiles(CurrentDirectory).Count();
+        fdr2 = Directory.GetDirectories(CurrentDirectory).Count();
+        
+
+
+        args.Children.Text = GetTextForNode;
+        
+        
+        args.Children.HasChildren =
+            (path) => Directory.Exists((string)path);
+        args.Children.Template = FileOrFolderTemplate;
+    }
+    private void Drt()
+    {
+        ju = null;
+        hiiu = "none";
+    }
+    private void LoadFiles()
+    {
+        Files = new List<FileObject>();
+        var FileNames =
+            Directory.EnumerateFileSystemEntries(CurrentDirectory)
+            .Where(x => x.Contains("."));
+        ju = "none";
+        hiiu = null;
+       // diru = CurrentDirectory.Replace(@"C:\Users\pc\Downloads\Bildev\Bilog\Bilog\wwwroot\uploads\", "");
+        diru =  Path.GetFileName(CurrentDirectory);
+
+        foreach (var item in FileNames)
+        {
+            using (var image = Image.FromFile(item))
+            {
+                // Calculate Thumbnail
+                int thumbnailHeight = 100;
+                int thumbnailWidth = 100;
+                double x = image.Height / 100;
+                if (x > 0)
+                {
+                    thumbnailHeight = Convert.ToInt32(image.Height / x);
+                    thumbnailWidth = Convert.ToInt32(image.Width / x);
+                }
+
+                Files.Add(new FileObject()
+                {
+                    FileName =
+                    Path.GetFileName(item),
+                    FilePath =
+                    item.Replace(HostEnvironment.WebRootPath, ""),
+                    Height = image.Height,
+                    Width = image.Width,
+                    ThumbnailHeight = Convert.ToInt32(thumbnailHeight),
+                    ThumbnailWidth = Convert.ToInt32(thumbnailWidth)
+                });
+            }
+        }
+
+        // Reset selected file
+        SelectedFile = new FileObject();
+
+        // Update UI
+        StateHasChanged();
+    }
+
+    // Uploading
+
+    private async void OnProgress(UploadProgressArgs args)
+    {
+        ShowProgressBarPopup = true;
+        this.info = $"{args.Loaded} of {args.Total} bytes.";
+        this.progress = args.Progress;
+        StateHasChanged();
+        if (args.Loaded == args.Total)
+        {
+            // Delay to give files time to be saved
+            // before reloading file view
+            await LoadFilesAsync();
+        }
+    }
+
+    private async Task LoadFilesAsync()
+    {
+        int Time = 1;
+        while (Time > 0)
+        {
+            Time--;
+            StateHasChanged();
+            await Task.Delay(1000);
+        }
+        ShowProgressBarPopup = false;
+        LoadFiles();
+    }
+
+    // Deleteing
+
+    private void DeleteSelectedFile()
+    {
+        string RequestedPath = SelectedFile.FilePath;
+
+        RequestedPath =
+            RequestedPath.Replace("\\uploads\\", "uploads\\");
+
+        string path = Path.Combine(
+            HostEnvironment.WebRootPath,
+            RequestedPath);
+
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+
+            LoadFiles();
+        }
+    }
+
+    // Folders
+
+    private void AddFolder()
+    {
+        ShowFolderPopup = true;
+    }
+
+    private void CloseFolderPopup()
+    {
+        ShowFolderPopup = false;
+    }
+
+    private void AddFolderName()
+    {
+        string path = Path.Combine(
+            HostEnvironment.WebRootPath,
+            CurrentDirectory,
+            NewFolderName);
+
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+            LoadFiles();
+        }
+
+        NewFolderName = "";
+        ShowFolderPopup = false;
+    }
+
+    private void FolderAction(RadzenSplitButtonItem item)
+    {
+        if (item != null)
+        {
+            if (item.Value == "Add")
+            {
+                ShowFolderPopup = true;
+            }
+            // Delete
+            if (item.Value == "Delete")
+            {
+                string path = Path.Combine(
+                    HostEnvironment.WebRootPath,
+                    CurrentDirectory);
+
+                if (path.ToLower() != CurrentRoot.ToLower())
+                {
+                    if (Directory.Exists(path))
+                    {
+                        Directory.Delete(path, true);
+
+                        CurrentDirectory = Path.Combine(
+                            HostEnvironment.WebRootPath,
+                            "uploads");
+
+                        LoadFiles();
+                    }
+                }
+            }
+        }
+    }
+
+    private void DelFolder()
+    {
+
+        string path = Path.Combine(
+            HostEnvironment.WebRootPath,
+            CurrentDirectory);
+
+        if (path.ToLower() != CurrentRoot.ToLower())
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+
+                CurrentDirectory = Path.Combine(
+                    HostEnvironment.WebRootPath,
+                    "uploads");
+                       ShowFolderDelPopup = false;
+ 
+
+                LoadFiles();
+
+            }
+
+
+        }
+    }
+}

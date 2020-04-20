@@ -1,0 +1,393 @@
+﻿@page "/dashboard/settings"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IConfiguration _configuration
+@inject IToastService toastService
+@inject EmailService _EmailService
+@inject GeneralSettingsService _GeneralSettingsService
+@inject IHttpContextAccessor httpContextAccessor
+@inherits OwningComponentBase
+<div class="content">
+    <div class="row">
+
+                <div class="col-md-8">
+                    <div class="card card-user">
+                        <div class="image" @onclick="SelectLogo">
+                            <img src="@objGeneralSettings.ApplicationLogo" alt="..." @onclick="SelectLogo">
+                        </div>
+                        <div class="card-header">
+                            <h5 class="card-title">Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 px-1">
+
+                                    <div class="form-group">
+                                        <label>App Name</label>
+                                        <input type="text" class="form-control" placeholder="App Name" @bind="objGeneralSettings.ApplicationName">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 px-1">
+                                    <div class="form-group">
+                                        <label>Allow Registration</label>
+                                        <select class="form-control"
+                                                @bind="@AllowRegistration">
+                                            @foreach (var option in OptionsTrueFalse)
+                                            {
+                                                <option value="@option">
+                                                    @option
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 px-1">
+                                    <div class="form-group">
+                                        <label>Verified Registration</label>
+                                        <select class="form-control"
+                                                @bind="@VerifiedRegistration">
+                                            @foreach (var option in OptionsTrueFalse)
+                                            {
+                                                <option value="@option">
+                                                    @option
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                </div>
+                                <div class="row" style="margin:30px auto auto auto;">
+                                    <h3>Email Settings</h3>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 px-1">
+                                        <div class="form-group">
+                                            <label>SMTP Server</label>
+                                            <input class="form-control" type="text"
+                                                   @bind="objGeneralSettings.SMTPServer" />
+
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-1">
+                                        <div class="form-group">
+                                            <label>SMTP Authentication</label>
+                                            <select class="form-control"
+                                                    @bind="@SMTPAuthentication">
+                                                @foreach (var option in OptionsSMTP)
+                                                {
+                                                    <option value="@option">
+                                                        @option
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-1">
+                                        <div class="form-group">
+                                            <label>SMTP Secure</label>
+                                            <select class="form-control"
+                                                    @bind="@SMTPSecure">
+                                                @foreach (var option in OptionsTrueFalse)
+                                                {
+                                                    <option value="@option">
+                                                        @option
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-1">
+                                        <div class="form-group">
+                                            <label>SMTP Username</label>
+                                            <input class="form-control" type="text"
+                                                   @bind="objGeneralSettings.SMTPUserName" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 px-1">
+                                        <div class="form-group">
+                                            <label>SMTP Password</label>
+                                            <input class="form-control" type="text"
+                                                   @bind="objGeneralSettings.SMTPPassword" />
+                                        </div>
+                                    </div>
+
+
+
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>About Me</label>
+                                            @if (!RichTextEditorMode)
+                                            {
+                                                <textarea class="form-control" @bind="@objGeneralSettings.ApplicationHeader" rows="5" />
+                                            }
+                                            <div style="@((!RichTextEditorMode) ? "display: none;":"")">
+                                                <BlazoredTextEditor @ref="@QuillHtml">
+                                                    <ToolbarContent>
+                                                        <select class="ql-header">
+                                                            <option selected=""></option>
+                                                            <option value="1"></option>
+                                                            <option value="2"></option>
+                                                            <option value="3"></option>
+                                                            <option value="4"></option>
+                                                            <option value="5"></option>
+                                                        </select>
+                                                        <span class="ql-formats">
+                                                            <button class="ql-bold"></button>
+                                                            <button class="ql-italic"></button>
+                                                            <button class="ql-underline"></button>
+                                                            <button class="ql-strike"></button>
+                                                        </span>
+                                                        <span class="ql-formats">
+                                                            <select class="ql-color"></select>
+                                                            <select class="ql-background"></select>
+                                                        </span>
+                                                        <span class="ql-formats">
+                                                            <button class="ql-list" value="ordered"></button>
+                                                            <button class="ql-list" value="bullet"></button>
+                                                        </span>
+                                                        <span class="ql-formats">
+                                                            <button class="ql-link"></button>
+                                                            <button class="btn btn-link" id="custom-button"
+                                                                    @onclick="InsertApplicationHeaderImageClick">
+                                                                <img src="imageIcon.png" style="border:hidden" />
+                                                            </button>
+                                                        </span>
+                                                    </ToolbarContent>
+                                                    <EditorContent>
+                                                        &nbsp;
+                                                    </EditorContent>
+                                                </BlazoredTextEditor>
+                                            </div>
+                                            @if (!RichTextEditorMode)
+                                            {
+                                                <button type="button" class="btn btn-link" @onclick="RichTextEditor"><h6>[Rich Text Editor]</h6></button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-link" @onclick="RawHTMLEditor"><h6>[Raw HTML Editor]</h6></button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row" style="justify-content:space-between">
+
+                                    <button class="btn btn-primary" @onclick="Save">Save</button>
+                                    <button class="btn btn-success" @onclick="SendTestEmail">Send Test Email</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <FileManager @ref="FileManagerControl"
+                                 ImageSelected="InsertImage" />
+                    <FileManager @ref="FileManagerApplicationHeaderControl"
+                                 ImageSelected="InsertApplicationHeaderImage" />
+
+
+        </div>
+        </div>
+
+        @code {
+            // AuthenticationState is available as a CascadingParameter
+            [CascadingParameter]
+            private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+            public System.Security.Claims.ClaimsPrincipal CurrentUser;
+            string ADMINISTRATION_ROLE = "Administrators";
+
+            GeneralSettings objGeneralSettings = new GeneralSettings();
+            private FileManager FileManagerControl;
+            private FileManager FileManagerApplicationHeaderControl;
+
+            BlazoredTextEditor QuillHtml;
+            bool RichTextEditorMode = true;
+
+            List<string> OptionsTrueFalse = new List<string>() { "True", "False" };
+            List<string> OptionsSMTP = new List<string>() { "Anonymous", "Basic", "NTLM" };
+            string AllowRegistration = "";
+            string VerifiedRegistration = "";
+            string SMTPSecure = "";
+            string SMTPAuthentication = "";
+            string DisqusEnabled = "";
+
+            protected override async Task OnInitializedAsync()
+            {
+                // Get the current user
+                CurrentUser = (await authenticationStateTask).User;
+
+                _GeneralSettingsService = (GeneralSettingsService)ScopedServices.GetService(typeof(GeneralSettingsService));
+                _EmailService = (EmailService)ScopedServices.GetService(typeof(EmailService));
+
+                await LoadGeneralSettingsAsync();
+             }
+
+            protected override async Task
+                OnAfterRenderAsync(bool firstRender)
+            {
+                if (firstRender)
+                {
+                    var GeneralSettings = await _GeneralSettingsService.GetGeneralSettingsAsync();
+                  //  await this.QuillHtml.LoadHTMLContent(GeneralSettings.ApplicationHeader);
+                }
+            }
+
+            protected async Task LoadGeneralSettingsAsync()
+            {
+                objGeneralSettings = await _GeneralSettingsService.GetGeneralSettingsAsync();
+                AllowRegistration = objGeneralSettings.AllowRegistration.ToString();
+                VerifiedRegistration = objGeneralSettings.VerifiedRegistration.ToString();
+                SMTPSecure = objGeneralSettings.SMTPSecure.ToString();
+              
+                switch (objGeneralSettings.SMTPAuthendication.Trim())
+                {
+                    case "":
+                    case "0":
+                        SMTPAuthentication = "Anonymous";
+                        break;
+                    case "1":
+                        SMTPAuthentication = "Basic";
+                        break;
+                    case "2":
+                        SMTPAuthentication = "NTLM";
+                        break;
+                }
+            }
+
+            void SelectLogo()
+            {
+                FileManagerControl.SetShowFileManager(true);
+            }
+
+            void InsertImage(string paramImageURL)
+            {
+                objGeneralSettings.ApplicationLogo = paramImageURL;
+
+                FileManagerControl.SetShowFileManager(false);
+            }
+
+            async Task InsertApplicationHeaderImage(string paramImageURL)
+            {
+                await this.QuillHtml.InsertImage(paramImageURL);
+
+                FileManagerApplicationHeaderControl.SetShowFileManager(false);
+            }
+
+            private void InsertApplicationHeaderImageClick()
+            {
+                FileManagerApplicationHeaderControl.SetShowFileManager(true);
+            }
+
+            private async Task RichTextEditor()
+            {
+                RichTextEditorMode = true;
+                await this.QuillHtml.LoadHTMLContent(objGeneralSettings.ApplicationHeader);
+            }
+
+            private async Task RawHTMLEditor()
+            {
+                RichTextEditorMode = false;
+                objGeneralSettings.ApplicationHeader =
+                    await this.QuillHtml.GetHTML();
+            }
+
+            public async Task Save()
+            {
+                try
+                {
+                    await SaveSettings();
+                    toastService.ShowSuccess("", "Saved!");
+                }
+                catch (Exception ex)
+                {
+                    toastService.ShowSuccess("Error", ex.GetBaseException().Message);
+                }
+            }
+
+            public async Task SaveSettings()
+            {
+                var AllowRegistrationResult = _GeneralSettingsService.UpdateAllowRegistrationAsync(Convert.ToBoolean(AllowRegistration));
+                var VerifiedRegistrationResult = _GeneralSettingsService.UpdateVerifiedRegistrationAsync(Convert.ToBoolean(VerifiedRegistration));
+                var SMTPSecureResult = _GeneralSettingsService.UpdateSMTPSecureAsync(Convert.ToBoolean(SMTPSecure));
+
+                var UpdateApplicationNameResult = _GeneralSettingsService.UpdateApplicationNameAsync(objGeneralSettings.ApplicationName);
+                var UpdateApplicationLogoResult = _GeneralSettingsService.UpdateApplicationLogoAsync(objGeneralSettings.ApplicationLogo);
+                var UpdateSMTPServerResult = _GeneralSettingsService.UpdateSMTPServerAsync(objGeneralSettings.SMTPServer);
+                var UpdateSMTPUserNameResult = _GeneralSettingsService.UpdateSMTPUserNameAsync(objGeneralSettings.SMTPUserName);
+                var UpdateSMTPPasswordResult = _GeneralSettingsService.UpdateSMTPPasswordAsync(objGeneralSettings.SMTPPassword);
+                var UpdateSMTPFromEmailResult = _GeneralSettingsService.UpdateSMTPFromEmailAsync(objGeneralSettings.SMTPFromEmail);
+
+              
+                if (RichTextEditorMode)
+                {
+                    objGeneralSettings.ApplicationHeader =
+                        await this.QuillHtml.GetHTML();
+                }
+
+                // If ApplicationHeader is essentially blank - - clear it
+                if (objGeneralSettings.ApplicationHeader == @"<p><br></p>")
+                {
+                    objGeneralSettings.ApplicationHeader = "";
+                }
+
+                var UpdateApplicationHeaderResult =
+                    _GeneralSettingsService.UpdateApplicationHeaderAsync(objGeneralSettings.ApplicationHeader);
+
+                switch (SMTPAuthentication)
+                {
+                    case "Anonymous":
+                        objGeneralSettings.SMTPAuthendication = "0";
+                        break;
+                    case "Basic":
+                        objGeneralSettings.SMTPAuthendication = "1";
+                        break;
+                    case "NTLM":
+                        objGeneralSettings.SMTPAuthendication = "2";
+                        break;
+                }
+
+                var UpdateSMTPAuthendicationResult = _GeneralSettingsService.UpdateSMTPAuthenticationAsync(objGeneralSettings.SMTPAuthendication);
+
+                objGeneralSettings = await _GeneralSettingsService.GetGeneralSettingsAsync();
+            }
+
+            public async Task SendTestEmail()
+            {
+                try
+                {
+                    await SaveSettings();
+
+                    // Send Test Email
+                    string strError = await _EmailService.SendMailAsync(
+                         false,
+                         objGeneralSettings.SMTPFromEmail,
+                         "Blazor-Blogs Administrator",
+                         "", "",
+                         objGeneralSettings.SMTPFromEmail,
+                         "Blazor-Blogs SMTP Test Email",
+                         $"This is a Blazor-Blogs SMTP Test Email from: { httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host}{httpContextAccessor.HttpContext.Request.PathBase}");
+
+                    if (strError == "")
+                    {
+                        toastService.ShowSuccess("", "Test Email Sent");
+                    }
+                    else
+                    {
+                        toastService.ShowError("", strError);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    toastService.ShowError("", ex.GetBaseException().Message);
+                }
+            }
+        }

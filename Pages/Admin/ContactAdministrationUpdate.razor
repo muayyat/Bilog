@@ -1,0 +1,264 @@
+﻿@page "/dashboard/messages/{Link}"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpContextAccessor httpContextAccessor
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@inject SearchState SearchState
+@inject IHeadElementHelper HeadElementHelper
+@inject NavigationManager nav
+@inject IToastService toastService
+@inject ApplicationDbContext _context
+
+<Title>Reply Messages</Title>
+<Meta Property="og:title" Content="Reply Messages" />
+
+<div class="content">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card card-user">
+               
+               
+
+                <div class="card-header">
+                    <h5 class="card-title">Reply Message</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedProject.Fullname" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedProject.Title" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedProject.Email" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input class="form-control" type="datetime"
+                                       @bind="SelectedProject.Date" />
+                            </div>
+                        </div>
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedProject.Phone" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 px-1">
+
+                            <div class="form-group">
+                                <label>Source</label>
+                                <input class="form-control" type="text"
+                                       @bind="SelectedProject.Source" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Details</label>
+                            <textarea class="form-control" type="text"
+                                      @bind="SelectedProject.Details"></textarea>
+                        </div>
+
+
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Reply</label>
+                            <textarea class="form-control" type="text"
+                                      @bind="SelectedProject.Reply"></textarea>
+                        </div>
+
+
+                    </div>
+
+                    <span style="color:red">@strError</span>
+                    <div class="row" style="justify-content:space-between;">
+
+                        <button class="btn btn-primary"
+                                @onclick="SaveProject">
+                            Reply
+                        </button>
+                        <button class="btn btn-primary btn-danger"
+                                @onclick="()=> { gobk = true; }">
+                            Delete
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (gobk)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Delete Message</h4>
+                </div>
+                <div class="modal-body">You are deleting the message and all its contents</div> <br />
+
+                <div class="modal-footer" style="justify-content:space-between;">
+                    <button class="btn btn-danger" @onclick="Delety">Yes</button>
+
+                    <button class="btn btn-primary" @onclick="()=> { gobk = false; }">No</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+@if (saved)
+{
+    <div class="modal" tabindex="-1" style="display:block; background:#dddddd63;" role="dialog">
+        <div class="modal-dialog modal-sm" style="top:30%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Saved Successfully</h4>
+                </div>
+                <div class="modal-body">Your new project has been saved successfully </div> <br />
+
+                <div class="modal-footer" style="justify-content:space-between;">
+                    <button class="btn btn-info" @onclick="GoBack">Go to List</button>
+
+                    <button class="btn btn-light" @onclick="()=> { saved = false; }">Edit it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+
+
+@code {
+    // AuthenticationState is available as a CascadingParameter
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    [Parameter]
+    public string Link { get; set; }
+
+
+    //   ProjectDTO SelectedProject;
+    Contacts SelectedProject = new Contacts();
+
+
+    bool gobk = false;
+    bool saved = false;
+    string strError;
+    string webs;
+    //    List<string> OptionsC = new List<string>() { "Web", "Native", "Ai", "Open Source" };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        SelectedProject = _context.Contacts.Where(x => x.Id == Convert.ToInt32(Link)).FirstOrDefault();
+        if (SelectedProject.Seen == null)
+        {
+            SelectedProject.Seen = DateTime.Now;
+            _context.Contacts.Update(SelectedProject);
+             // Log
+            await LogAction($"Viewed message #{SelectedProject.Id}");
+        }
+
+    }
+
+    //CategoryManagerControl
+
+
+
+
+
+    async Task GoBack()
+    {
+        nav.NavigateTo("dashboard/projects");
+    }
+
+    async Task Delety()
+    {
+        _context.Contacts.Remove(SelectedProject);
+        _context.SaveChanges();
+        toastService.ShowSuccess("", "Message Deleted Successfully");
+        nav.NavigateTo("dashboard/messages");
+
+    }
+    async Task SaveProject()
+    {
+        try
+        {
+
+            if((SelectedProject.Reply !=null) && (SelectedProject.Replied==null))
+            {
+                SelectedProject.Replied = DateTime.Now;
+            }
+            _context.Contacts.Update(SelectedProject);
+            _context.SaveChanges();
+
+            // @Service.CreateProjectAsync(SelectedProject);
+
+            // Log
+            await LogAction($"Replied to message #{SelectedProject.Id}");
+            toastService.ShowSuccess("", "Message replied Successfully");
+            saved = true;
+
+
+        }
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+            toastService.ShowSuccess("Error", ex.GetBaseException().Message);
+
+        }
+
+    }
+
+
+
+
+    private async Task LogAction(string strAction)
+    {
+        // Get the current user
+        var CurrentUser = (await authenticationStateTask).User;
+
+        Bilog.Data.Models.Logs objLog = new Data.Models.Logs();
+        objLog.LogDate = DateTime.Now;
+        objLog.LogAction = strAction;
+        objLog.LogUserName = (CurrentUser.Identity != null) ? CurrentUser.Identity.Name : "";
+        objLog.LogIpaddress = httpContextAccessor.HttpContext.Connection?.RemoteIpAddress.ToString();
+
+        var result = await @Service.CreateLogAsync(objLog);
+    }
+}

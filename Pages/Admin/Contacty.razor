@@ -1,0 +1,150 @@
+﻿@page "/dashboard/messages"
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity;
+@using Bilog.Data;
+@using Bilog.Data.Models;
+@inject IHttpContextAccessor httpContextAccessor
+@inject UserManager<ApplicationUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IConfiguration _configuration
+@inherits OwningComponentBase<BlogsService>
+@inject NavigationManager nav
+@inject ApplicationDbContext _context
+
+
+<Title>Contacts List</Title>
+<Meta Property="og:title" Content="Contacts List" />
+
+
+
+<div class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Contacts List</h4>
+                
+                </div>
+                <div class="card-body">
+
+
+                    @if (colContacts.Contacts.Count == 0)
+                    {
+
+                        <div class="preloader">
+
+                            <div class="sk-spinner sk-spinner-pulse"></div>
+
+                        </div>
+                    }
+                    else
+                    {
+
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead class=" text-primary">
+                                <th>
+                                    Full Name
+                                </th>
+                                <th>
+                                    Email
+                                </th>
+                                <th>
+                                    Date
+                                </th>
+                                
+                                </thead>
+                                <tbody>
+
+                                    @foreach (var blog in colContacts.Contacts)
+                                    {
+                                        
+                                        <tr @onclick="() => { nav.NavigateTo(nav.Uri +'/' + blog.Id); }">
+                                            <td>
+                                                @blog.Fullname
+                                            </td>
+
+                                            <td>
+                                                @blog.Email
+                                            </td>
+                                            <td>
+                                                @blog.Date
+                                            </td>
+                                        </tr>
+
+
+
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                       
+                        @if (ShowNextButton)
+                        {
+                            <button class="btn btn-light"
+                                    @onclick="Next">
+                                <b>&#x3E;</b>
+                            </button>
+                        }
+
+
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    
+  
+    string strError;
+    public bool ConFirmDeletePopup = false;
+    public string Koi = DateTime.UtcNow.Month.ToString();
+    int CurrentPage = 1;
+    ContactsPaged colContacts =
+        new ContactsPaged()
+        {
+            Contacts = new List<Bilog.Data.Models.Contacts>(),
+            ContactCount = 0
+        };
+
+    bool ShowNextButton
+    {
+        get
+        {
+            return (
+                (colContacts.ContactCount > (CurrentPage * 10))
+                );
+        }
+    }
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+       
+        colContacts = await @Service.GetContactsAsync(CurrentPage);
+    }
+
+    async Task Previous()
+    {
+        if (CurrentPage > 1)
+        {
+            CurrentPage = CurrentPage - 1;
+            colContacts = await @Service.GetContactsAsync(CurrentPage);
+        }
+    }
+
+    async Task Next()
+    {
+        CurrentPage = CurrentPage + 1;
+        colContacts = await @Service.GetContactsAsync(CurrentPage);
+    }
+
+
+
+
+}
