@@ -1,5 +1,5 @@
 # Bilog
-SPA and PWA based CMS
+Fully functional, fast and lightweight single page CMS for building blogs, portfolios and more.
 # Features
  Single Page App <br/>
  Installable Progressive web app <br/>
